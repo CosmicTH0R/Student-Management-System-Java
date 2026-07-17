@@ -1,5 +1,6 @@
 package com.example.sms.controller;
 
+import com.example.sms.dto.PagedResponse;
 import com.example.sms.dto.StudentDto;
 import com.example.sms.service.StudentService;
 import jakarta.validation.Valid;
@@ -32,8 +33,14 @@ public class StudentController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<StudentDto>> getAllStudents() {
-        return ResponseEntity.ok(studentService.getAllStudents());
+    public ResponseEntity<PagedResponse<StudentDto>> getAllStudents(
+            @RequestParam(value = "pageNo", defaultValue = "0", required = false) int pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10", required = false) int pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = "asc", required = false) String sortDir,
+            @RequestParam(value = "search", defaultValue = "", required = false) String search
+    ) {
+        return ResponseEntity.ok(studentService.getAllStudents(pageNo, pageSize, sortBy, sortDir, search));
     }
 
     @GetMapping("/department/{departmentId}")

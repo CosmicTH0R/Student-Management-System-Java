@@ -1,5 +1,6 @@
 package com.example.sms.service.impl;
 
+import com.example.sms.dto.PagedResponse;
 import com.example.sms.dto.StudentDto;
 import com.example.sms.entity.Department;
 import com.example.sms.entity.Student;
@@ -8,6 +9,10 @@ import com.example.sms.repository.DepartmentRepository;
 import com.example.sms.repository.StudentRepository;
 import com.example.sms.service.StudentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,10 +56,32 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public List<StudentDto> getAllStudents() {
-        return studentRepository.findAll().stream()
+    public PagedResponse<StudentDto> getAllStudents(int pageNo, int pageSize, String sortBy, String sortDir, String search) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Page<Student> students;
+
+        if (search != null && !search.isEmpty()) {
+            students = studentRepository.searchStudents(search, pageable);
+        } else {
+            students = studentRepository.findAll(pageable);
+        }
+
+        List<StudentDto> content = students.getContent().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+
+        PagedResponse<StudentDto> response = new PagedResponse<>();
+        response.setContent(content);
+        response.setPageNo(students.getNumber());
+        response.setPageSize(students.getSize());
+        response.setTotalElements(students.getTotalElements());
+        response.setTotalPages(students.getTotalPages());
+        response.setLast(students.isLast());
+
+        return response;
     }
 
     @Override
