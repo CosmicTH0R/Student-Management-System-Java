@@ -1,5 +1,6 @@
 package com.example.sms.service.impl;
 import com.example.sms.dto.StudentDto;
+import com.example.sms.dto.StudentResponse;
 import com.example.sms.entity.Department;
 import com.example.sms.entity.Student;
 import com.example.sms.exception.ResourceNotFoundException;
@@ -7,6 +8,10 @@ import com.example.sms.repository.DepartmentRepository;
 import com.example.sms.repository.StudentRepository;
 import com.example.sms.service.StudentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,8 +44,21 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public List<StudentDto> getAllStudents() {
-        return studentRepository.findAll().stream().map(this::mapToDto).collect(Collectors.toList());
+    public StudentResponse getAllStudents(int pageNo, int pageSize, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Page<Student> students = studentRepository.findAll(pageable);
+        List<StudentDto> content = students.getContent().stream().map(this::mapToDto).collect(Collectors.toList());
+        
+        StudentResponse studentResponse = new StudentResponse();
+        studentResponse.setContent(content);
+        studentResponse.setPageNo(students.getNumber());
+        studentResponse.setPageSize(students.getSize());
+        studentResponse.setTotalElements(students.getTotalElements());
+        studentResponse.setTotalPages(students.getTotalPages());
+        studentResponse.setLast(students.isLast());
+        return studentResponse;
     }
 
     @Override
